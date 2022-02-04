@@ -1,0 +1,10 @@
+<beans>
+    <bean id="paymentWithMaxService" class="com.pankov.roadtosenior.ioccontainer.service.PaymentService">
+        <property name="maxAmount" value="5000"/>
+        <property name="mailService" ref="mailService"/>
+    </bean>
+
+    <bean id="paymentService" class="com.pankov.roadtosenior.ioccontainer.service.PaymentService">
+        <property name="mailService" ref="mailService"/>
+    </bean>
+</beans>
