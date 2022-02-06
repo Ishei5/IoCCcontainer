@@ -9,9 +9,11 @@ import com.pankov.roadtosenior.ioccontainer.service.MailService;
 import com.pankov.roadtosenior.ioccontainer.service.PaymentService;
 import com.pankov.roadtosenior.ioccontainer.service.ServiceWithoutDefConstructor;
 import com.pankov.roadtosenior.ioccontainer.service.UserService;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -111,9 +113,13 @@ class ClassPathApplicationContextTest {
     }
 
     @Test
-    public void testGetSetterMethod() {
+    @SneakyThrows
+    public void testSetterMethod() {
         PaymentService paymentService = new PaymentService();
-//        Method setMaxAmount = context.getSetterMethod(paymentService, "setMaxAmount");
+        assertEquals(0, paymentService.getMaxAmount());
+        Method setMaxAmount = context.getSetterMethod(paymentService, "setMaxAmount", int.class);
+        setMaxAmount.invoke(paymentService, 111);
+        assertEquals(111, paymentService.getMaxAmount());
     }
 
     @Test
