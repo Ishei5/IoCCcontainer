@@ -13,6 +13,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -124,34 +125,34 @@ class ClassPathApplicationContextTest {
 
     @Test
     public void testGetSetterMethodShouldThrowException() {
-        assertThrows(BeanInstantiationException.class, () ->
+        assertThrows(NoSuchMethodException.class, () ->
                 context.getSetterMethod(new ServiceWithoutDefConstructor("POP3", 3333),
                         "setPort", int.class));
     }
 
     @Test
-    public void testGetStringValueType() {
+    public void testGetStringValueType() throws NoSuchFieldException {
         MailService mailService = new MailService();
         Class<?> actualType = context.getValueType(mailService, "protocol");
         assertEquals(String.class, actualType);
     }
 
     @Test
-    public void testGetIntValueType() {
+    public void testGetIntValueType() throws NoSuchFieldException {
         PaymentService paymentService = new PaymentService();
         Class<?> actualType = context.getValueType(paymentService, "maxAmount");
         assertEquals(int.class, actualType);
     }
 
     @Test
-    public void testGetReferenceValueType() {
+    public void testGetReferenceValueType() throws NoSuchFieldException {
         PaymentService paymentService = new PaymentService();
         Class<?> actualType = context.getValueType(paymentService, "mailService");
         assertEquals(MailService.class, actualType);
     }
 
     @Test
-    public void testParseIntegerProperty() {
+    public void testParseIntegerProperty() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Object actual = context.parseProperty("111", int.class);
 
         assertEquals(111, actual);
@@ -159,7 +160,7 @@ class ClassPathApplicationContextTest {
     }
 
     @Test
-    public void testParseDoubleProperty() {
+    public void testParseDoubleProperty() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Object actual = context.parseProperty("111.11", double.class);
 
         assertEquals(111.11, actual);
@@ -168,7 +169,7 @@ class ClassPathApplicationContextTest {
 
 
     @Test
-    public void testInjectValue() {
+    public void testInjectValue() throws ReflectiveOperationException {
         MailService mailService = new MailService();
         context.injectValueProperty(mailService, "protocol", "POP3");
         context.injectValueProperty(mailService, "port", "3000");
@@ -184,7 +185,7 @@ class ClassPathApplicationContextTest {
     }
 
     @Test
-    public void testInjectRefProperty() {
+    public void testInjectRefProperty() throws ReflectiveOperationException {
         List<Bean> beans = List.of(new Bean("mailService", new MailService()));
         context.setBeans(beans);
         UserService userService = new UserService();
@@ -208,7 +209,7 @@ class ClassPathApplicationContextTest {
     }
 
     @Test
-    public void testInjectRefProperties() {
+    public void testInjectRefProperties() throws ReflectiveOperationException {
         context.setBeans(expectedListBeans);
         context.injectValueProperty(expectedListBeans.get(3).getValue(), "maxAmount", "1000");
         context.injectRefProperties(expectedListBeanDefinitions, expectedListBeans);

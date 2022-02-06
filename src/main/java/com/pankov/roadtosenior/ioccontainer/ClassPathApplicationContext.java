@@ -5,6 +5,7 @@ import com.pankov.roadtosenior.ioccontainer.entity.BeanDefinition;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanException;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanInstantiationException;
 import com.pankov.roadtosenior.ioccontainer.exception.NoUniqueBeanException;
+import com.pankov.roadtosenior.ioccontainer.exception.PostBeanConfigurationException;
 import com.pankov.roadtosenior.ioccontainer.reader.BeanDefinitionReader;
 import com.pankov.roadtosenior.ioccontainer.reader.XMLBeanDefinitionReader;
 
@@ -112,7 +113,14 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 continue;
             }
 
-            valueProperties.forEach((key, value) -> injectValueProperty(bean.getValue(), key, value));
+            valueProperties.forEach((key, value) -> {
+                try {
+                    injectValueProperty(bean.getValue(), key, value);
+                } catch (ReflectiveOperationException exception) {
+                    throw new PostBeanConfigurationException(String.format("Error during set property %s", value),
+                            exception);
+                }
+            });
         }
     }
 
@@ -128,24 +136,26 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 continue;
             }
 
-            refProperties.forEach((key, value) -> injectRefProperty(bean.getValue(), key, value));
+            refProperties.forEach((key, value) -> {
+                try {
+                    injectRefProperty(bean.getValue(), key, value);
+                } catch (ReflectiveOperationException exception) {
+                    throw new PostBeanConfigurationException(String.format("Error during set property %s", value),
+                            exception);
+                }
+            });
         }
     }
 
-    void injectValueProperty(Object object, String fieldName, String property) {
+    void injectValueProperty(Object object, String fieldName, String property) throws ReflectiveOperationException {
         String setterName = createSetterName(fieldName);
         Class<?> setterValueType = getValueType(object, fieldName);
         Method setter = getSetterMethod(object, setterName, setterValueType);
 
-        try {
-            setter.invoke(object, parseProperty(property, setterValueType));
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new BeanInstantiationException(String.format("Error during set property - %s", property),
-                    exception);
-        }
+        setter.invoke(object, parseProperty(property, setterValueType));
     }
 
-    public void injectRefProperty(Object object, String fieldName, String property) {
+    public void injectRefProperty(Object object, String fieldName, String property) throws ReflectiveOperationException {
         String setterName = createSetterName(fieldName);
         Class<?> setterRefType = getValueType(object, fieldName);
         Method setter = getSetterMethod(object, setterName, setterRefType);
@@ -155,13 +165,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
             throw new BeanException(String.format("There is no bean with id = %s", property));
         }
 
-        try {
-            setter.invoke(object, value);
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new BeanInstantiationException(String.format("Error during set property - %s", property),
-                    exception);
-        }
-
+        setter.invoke(object, value);
     }
 
     String createSetterName(String fieldName) {
@@ -169,23 +173,15 @@ public class ClassPathApplicationContext implements ApplicationContext {
     }
 
 
-    public Class<?> getValueType(Object object, String fieldName) {
-        try {
-            return object.getClass().getDeclaredField(fieldName).getType();
-        } catch (NoSuchFieldException exception) {
-            throw new BeanInstantiationException(String.format("Field \"%s\" does not exist in class", fieldName), exception);
-        }
+    public Class<?> getValueType(Object object, String fieldName) throws NoSuchFieldException {
+        return object.getClass().getDeclaredField(fieldName).getType();
     }
 
-    Method getSetterMethod(Object object, String methodName, Class<?> valueType) {
-        try {
-            return object.getClass().getDeclaredMethod(methodName, valueType);
-        } catch (NoSuchMethodException exception) {
-            throw new BeanInstantiationException("Setter is not accessible or does not exist", exception);
-        }
+    Method getSetterMethod(Object object, String methodName, Class<?> valueType) throws NoSuchMethodException {
+        return object.getClass().getDeclaredMethod(methodName, valueType);
     }
 
-    Object parseProperty(String property, Class<?> propertyType) {
+    Object parseProperty(String property, Class<?> propertyType) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = primitiveToWrapper(propertyType);
         List<Class<?>> listOfWrappers =
                 List.of(Integer.class, Double.class, Long.class, Boolean.class, Float.class, Short.class, Byte.class, Character.class);
@@ -193,11 +189,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
             return property;
         }
 
-        try {
-            return clazz.getDeclaredMethod("valueOf", String.class).invoke(clazz, property);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException exception) {
-            throw new BeanInstantiationException("Error during parse property", exception);
-        }
+        return clazz.getDeclaredMethod("valueOf", String.class).invoke(clazz, property);
     }
 
 
