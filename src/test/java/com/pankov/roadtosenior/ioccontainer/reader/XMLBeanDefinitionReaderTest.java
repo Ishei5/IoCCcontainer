@@ -79,7 +79,7 @@ class XMLBeanDefinitionReaderTest {
                         .refProperties(Map.of("mailService", "mailService"))
                         .build());
 
-        XMLBeanDefinitionReader reader = new XMLBeanDefinitionReader();
+        SaxXMLBeanDefinitionReader reader = new SaxXMLBeanDefinitionReader();
         List<BeanDefinition> actualListBeanDefinitions = reader.parseXMLToBeanDefinitionList(
                 new ByteArrayInputStream(correctXml.getBytes(StandardCharsets.UTF_8)));
 

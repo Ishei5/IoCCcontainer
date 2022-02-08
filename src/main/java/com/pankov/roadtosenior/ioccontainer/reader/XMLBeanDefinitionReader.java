@@ -23,13 +23,9 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
 
     @Override
     public List<BeanDefinition> getBeanDefinitions() {
-        List<BeanDefinition> beanDefinitionList = new ArrayList<>();
-
-        Arrays.stream(paths)
+        return Arrays.stream(paths)
                 .map(path -> parseXMLToBeanDefinitionList(this.getClass().getClassLoader().getResourceAsStream(path)))
-                .forEach(beanDefinitionList::addAll);
-
-        return beanDefinitionList;
+                .flatMap(list -> list.stream()).toList();
     }
 
     List<BeanDefinition> parseXMLToBeanDefinitionList(InputStream inputStream) {

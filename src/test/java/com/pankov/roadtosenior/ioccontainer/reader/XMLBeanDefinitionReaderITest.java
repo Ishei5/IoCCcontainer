@@ -38,8 +38,20 @@ public class XMLBeanDefinitionReaderITest {
     );
 
     @Test
-    public void testGetBeanDefinitionListFrom2Files() {
-        XMLBeanDefinitionReader xmlBeanDefinitionReader = new XMLBeanDefinitionReader(
+    public void testGetBeanDefinitionListFrom2Files_usingStaXParser() {
+        BeanDefinitionReader xmlBeanDefinitionReader = new XMLBeanDefinitionReader(
+                new String[]{"context.xml", "context2.xml"});
+        List<BeanDefinition> beanDefinitions = xmlBeanDefinitionReader.getBeanDefinitions();
+
+        assertNotNull(beanDefinitions);
+        assertEquals(4, beanDefinitions.size());
+
+        assertEquals(expectedListBeanDefinitions, beanDefinitions);
+    }
+
+    @Test
+    public void testGetBeanDefinitionListFrom2Files_usingSaXParser() {
+        BeanDefinitionReader xmlBeanDefinitionReader = new SaxXMLBeanDefinitionReader (
                 new String[]{"context.xml", "context2.xml"});
         List<BeanDefinition> beanDefinitions = xmlBeanDefinitionReader.getBeanDefinitions();
 

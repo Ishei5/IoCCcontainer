@@ -19,10 +19,6 @@ public class ClassPathApplicationContext implements ApplicationContext {
 
     private List<Bean> beans;
 
-    void setBeans(List<Bean> beans) {
-        this.beans = beans;
-    }
-
     public ClassPathApplicationContext(String... paths) {
         BeanDefinitionReader reader = new XMLBeanDefinitionReader(paths);
         List<BeanDefinition> beanDefinitions = reader.getBeanDefinitions();
@@ -31,7 +27,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         injectRefProperties(beanDefinitions, beans);
     }
 
-    public Bean createBean(BeanDefinition beanDefinition) {
+    Bean createBean(BeanDefinition beanDefinition) {
         Class<?> clazz;
         Object createdObject;
         try {
@@ -53,7 +49,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 .build();
     }
 
-    public List<Bean> createBeans(List<BeanDefinition> beanDefinitionList) {
+    List<Bean> createBeans(List<BeanDefinition> beanDefinitionList) {
         return beanDefinitionList.stream()
                 .map(this::createBean)
                 .collect(Collectors.toList());
@@ -100,7 +96,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 .collect(Collectors.toList());
     }
 
-    public void injectValueProperties(List<BeanDefinition> beanDefinitionList, List<Bean> beanList) {
+    void injectValueProperties(List<BeanDefinition> beanDefinitionList, List<Bean> beanList) {
         for (Bean bean : beanList) {
             BeanDefinition beanDefinition = beanDefinitionList.stream()
                     .filter(bDefinition -> bean.getId().equals(bDefinition.getId()))
@@ -116,7 +112,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         }
     }
 
-    public void injectRefProperties(List<BeanDefinition> beanDefinitionList, List<Bean> beanList) {
+    void injectRefProperties(List<BeanDefinition> beanDefinitionList, List<Bean> beanList) {
         for (Bean bean : beanList) {
             BeanDefinition beanDefinition = beanDefinitionList.stream()
                     .filter(bDefinition -> bean.getId().equals(bDefinition.getId()))
@@ -145,7 +141,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         }
     }
 
-    public void injectRefProperty(Object object, String fieldName, String property) {
+    void injectRefProperty(Object object, String fieldName, String property) {
         String setterName = createSetterName(fieldName);
         Class<?> setterRefType = getValueType(object, fieldName);
         Method setter = getSetterMethod(object, setterName, setterRefType);
@@ -169,7 +165,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
     }
 
 
-    public Class<?> getValueType(Object object, String fieldName) {
+    Class<?> getValueType(Object object, String fieldName) {
         try {
             return object.getClass().getDeclaredField(fieldName).getType();
         } catch (NoSuchFieldException exception) {
@@ -232,5 +228,9 @@ public class ClassPathApplicationContext implements ApplicationContext {
             return (Class<T>) Character.class;
         }
         return type;
+    }
+
+    void setBeans(List<Bean> beans) {
+        this.beans = beans;
     }
 }
