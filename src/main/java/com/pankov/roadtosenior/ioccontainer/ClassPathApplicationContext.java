@@ -5,54 +5,53 @@ import com.pankov.roadtosenior.ioccontainer.entity.BeanDefinition;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanException;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanInstantiationException;
 import com.pankov.roadtosenior.ioccontainer.exception.NoUniqueBeanException;
+import com.pankov.roadtosenior.ioccontainer.processor.BeanFactoryPostProcessor;
+import com.pankov.roadtosenior.ioccontainer.processor.BeanPostProcessor;
+import com.pankov.roadtosenior.ioccontainer.processor.PostConstruct;
+import com.pankov.roadtosenior.ioccontainer.processor.SystemBean;
 import com.pankov.roadtosenior.ioccontainer.reader.BeanDefinitionReader;
 import com.pankov.roadtosenior.ioccontainer.reader.XMLBeanDefinitionReader;
+import lombok.SneakyThrows;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClassPathApplicationContext implements ApplicationContext {
 
+    private static final Class<?> BEAN_FACTORY_POST_PROCESSOR = BeanFactoryPostProcessor.class;
+    private static final Class<?> BEAN_POST_PROCESSOR = BeanPostProcessor.class;
+
     private List<Bean> beans;
+    private Map<Class<?>, List<Bean>> systemBeans;
+    private List<BeanDefinition> beanDefinitions;
+    private final List<Class<?>> listOfWrappers =
+            List.of(Integer.class, Double.class, Long.class, Boolean.class, Float.class, Short.class, Byte.class, Character.class);
 
     public ClassPathApplicationContext(String... paths) {
         BeanDefinitionReader reader = new XMLBeanDefinitionReader(paths);
-        List<BeanDefinition> beanDefinitions = reader.getBeanDefinitions();
+        beanDefinitions = reader.getBeanDefinitions();
+
+        systemBeans = createSystemBeans(beanDefinitions);
+
+        if (systemBeans.get(BEAN_FACTORY_POST_PROCESSOR) != null) {
+            beanFactoryProcess();
+        }
+
         beans = createBeans(beanDefinitions);
         injectValueProperties(beanDefinitions, beans);
         injectRefProperties(beanDefinitions, beans);
-    }
 
-    Bean createBean(BeanDefinition beanDefinition) {
-        Class<?> clazz;
-        Object createdObject;
-        try {
-            clazz = Class.forName(beanDefinition.getClassName());
-        } catch (ClassNotFoundException exception) {
-            throw new RuntimeException("Declared class name does not exist {}", exception);
+        if (systemBeans.get(BEAN_POST_PROCESSOR) != null) {
+            beforeInitProcess();
         }
 
-        try {
-            createdObject = clazz.getConstructor().newInstance();
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException
-                exception) {
-            throw new BeanInstantiationException("Cannot get constructor without arguments", exception);
+        postConstructProcess();
+
+        if (systemBeans.get(BEAN_POST_PROCESSOR) != null) {
+            afterInitProcess();
         }
-
-        return Bean.builder()
-                .id(beanDefinition.getId())
-                .value(createdObject)
-                .build();
-    }
-
-    List<Bean> createBeans(List<BeanDefinition> beanDefinitionList) {
-        return beanDefinitionList.stream()
-                .map(this::createBean)
-                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
@@ -96,6 +95,111 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 .collect(Collectors.toList());
     }
 
+    void postConstructProcess() {
+        for (Bean bean : beans) {
+            Object beanClass = bean.getValue();
+            for (Method method : beanClass.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PostConstruct.class)) {
+                    method.setAccessible(true);
+                    try {
+                        method.invoke(beanClass);
+                    } catch (ReflectiveOperationException exception) {
+                        throw new BeanInstantiationException(
+                                String.format("Error during call init method of %s", beanClass), exception);
+                    }
+                }
+            }
+        }
+    }
+
+    Map<Class<?>, List<Bean>> createSystemBeans(List<BeanDefinition> beanDefinitionList) {
+        Map<Class<?>, List<Bean>> systemBeans = new HashMap<>();
+
+        for (Iterator<BeanDefinition> iterator = beanDefinitionList.iterator(); iterator.hasNext(); ) {
+            BeanDefinition beanDefinition = iterator.next();
+            if (isSystemBean(beanDefinition)) {
+                Bean bean = createBean(beanDefinition);
+                for (Class<?> clazz : bean.getValue().getClass().getInterfaces()) {
+                    if (SystemBean.class.isAssignableFrom(clazz)) {
+                        populateSystemBeansMap(systemBeans, bean, clazz);
+                    }
+                }
+                iterator.remove();
+            }
+        }
+
+        return systemBeans;
+    }
+
+    void populateSystemBeansMap(Map<Class<?>, List<Bean>> map, Bean bean, Class<?> processorInterface) {
+        List<Bean> beanList = map.get(processorInterface);
+        if (beanList == null) {
+            beanList = new ArrayList<>();
+            beanList.add(bean);
+            map.put(processorInterface, beanList);
+        } else {
+            beanList.add(bean);
+        }
+    }
+
+    @SneakyThrows
+    boolean isSystemBean(BeanDefinition beanDefinition) {
+        Class<?> clazz = Class.forName(beanDefinition.getClassName());
+        return SystemBean.class.isAssignableFrom(clazz);
+    }
+
+
+    void beanFactoryProcess() {
+        for (Bean systemBean : systemBeans.get(BEAN_FACTORY_POST_PROCESSOR)) {
+            ((BeanFactoryPostProcessor) systemBean.getValue()).postProcessBeanFactory(beanDefinitions);
+        }
+    }
+
+
+    Bean createBean(BeanDefinition beanDefinition) {
+        Class<?> clazz;
+        Object createdObject;
+        try {
+            clazz = Class.forName(beanDefinition.getClassName());
+        } catch (ClassNotFoundException exception) {
+            throw new RuntimeException("Declared class name does not exist {}", exception);
+        }
+
+        try {
+            createdObject = clazz.getConstructor().newInstance();
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException
+                exception) {
+            throw new BeanInstantiationException("Cannot get constructor without arguments", exception);
+        }
+
+        return Bean.builder()
+                .id(beanDefinition.getId())
+                .value(createdObject)
+                .build();
+    }
+
+    void beforeInitProcess() {
+        for (Bean systemBean : systemBeans.get(BEAN_POST_PROCESSOR)) {
+            for (Bean bean : beans) {
+                ((BeanPostProcessor) systemBean.getValue()).postProcessBeforeInitialization(bean.getValue(), bean.getId());
+            }
+        }
+    }
+
+    void afterInitProcess() {
+        for (Bean systemBean : systemBeans.get(BEAN_POST_PROCESSOR)) {
+            for (Bean bean : beans) {
+                ((BeanPostProcessor) systemBean.getValue()).postProcessAfterInitialization(bean.getValue(), bean.getId());
+            }
+        }
+    }
+
+    List<Bean> createBeans(List<BeanDefinition> beanDefinitionList) {
+        return beanDefinitionList.stream()
+                .map(this::createBean)
+                .collect(Collectors.toList());
+    }
+
     void injectValueProperties(List<BeanDefinition> beanDefinitionList, List<Bean> beanList) {
         for (Bean bean : beanList) {
             BeanDefinition beanDefinition = beanDefinitionList.stream()
@@ -104,11 +208,9 @@ public class ClassPathApplicationContext implements ApplicationContext {
                     .get();
             Map<String, String> valueProperties = beanDefinition.getValueProperties();
 
-            if (valueProperties == null) {
-                continue;
+            if (valueProperties != null) {
+                valueProperties.forEach((key, value) -> injectValueProperty(bean.getValue(), key, value));
             }
-
-            valueProperties.forEach((key, value) -> injectValueProperty(bean.getValue(), key, value));
         }
     }
 
@@ -120,11 +222,9 @@ public class ClassPathApplicationContext implements ApplicationContext {
                     .get();
             Map<String, String> refProperties = beanDefinition.getRefProperties();
 
-            if (refProperties == null) {
-                continue;
+            if (refProperties != null) {
+                refProperties.forEach((key, value) -> injectRefProperty(bean.getValue(), key, value));
             }
-
-            refProperties.forEach((key, value) -> injectRefProperty(bean.getValue(), key, value));
         }
     }
 
@@ -183,8 +283,6 @@ public class ClassPathApplicationContext implements ApplicationContext {
 
     Object parseProperty(String property, Class<?> propertyType) {
         Class<?> clazz = primitiveToWrapper(propertyType);
-        List<Class<?>> listOfWrappers =
-                List.of(Integer.class, Double.class, Long.class, Boolean.class, Float.class, Short.class, Byte.class, Character.class);
         if (!listOfWrappers.contains(clazz)) {
             return property;
         }
@@ -232,5 +330,21 @@ public class ClassPathApplicationContext implements ApplicationContext {
 
     void setBeans(List<Bean> beans) {
         this.beans = beans;
+    }
+
+    List<Bean> getBeans() {
+        return beans;
+    }
+
+    List<BeanDefinition> getBeanDefinitions() {
+        return beanDefinitions;
+    }
+
+    Map<Class<?>, List<Bean>> getSystemBeans() {
+        return systemBeans;
+    }
+
+    void setSystemBeans(Map<Class<?>, List<Bean>> systemBeans) {
+        this.systemBeans = systemBeans;
     }
 }

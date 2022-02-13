@@ -43,8 +43,7 @@ public class BeanDefinitionHandler extends DefaultHandler {
                 throw new ParseException("CLASS attribute is required");
             }
 
-            beanDefinition = new BeanDefinition();
-            beanDefinition.setId(id);
+            beanDefinition = new BeanDefinition(id);
             beanDefinition.setClassName(clazz);
 
             valueProperties = new HashMap<>();

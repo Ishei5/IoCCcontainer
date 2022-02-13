@@ -6,11 +6,12 @@ import java.util.Map;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@RequiredArgsConstructor
 
 public class BeanDefinition {
-    private String id;
+    @NonNull
+    private final String id;
     private String className;
     private Map<String, String> valueProperties;
     private Map<String, String> refProperties;

@@ -1,17 +1,19 @@
 package com.pankov.roadtosenior.ioccontainer.service;
 
 import com.pankov.roadtosenior.ioccontainer.processor.PostConstruct;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class PaymentService {
-    private int maxAmount;
-    private MailService mailService;
+@AllArgsConstructor
+public class SubstitutedMailService extends MailService {
+    private String protocol;
+    private Integer port;
 
     @PostConstruct
-    private void init(){
-        maxAmount = Integer.MAX_VALUE;
+    private void init() {
+        protocol = "SMTP";
     }
 }

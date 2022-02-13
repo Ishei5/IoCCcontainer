@@ -12,8 +12,4 @@ import lombok.NoArgsConstructor;
 public class Bean {
     private String id;
     private Object value;
-
-    public Object getValue() {
-        return value;
-    }
 }

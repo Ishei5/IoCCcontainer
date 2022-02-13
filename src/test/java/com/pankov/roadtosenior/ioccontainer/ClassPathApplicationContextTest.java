@@ -5,15 +5,14 @@ import com.pankov.roadtosenior.ioccontainer.entity.BeanDefinition;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanException;
 import com.pankov.roadtosenior.ioccontainer.exception.BeanInstantiationException;
 import com.pankov.roadtosenior.ioccontainer.exception.NoUniqueBeanException;
-import com.pankov.roadtosenior.ioccontainer.service.MailService;
-import com.pankov.roadtosenior.ioccontainer.service.PaymentService;
-import com.pankov.roadtosenior.ioccontainer.service.ServiceWithoutDefConstructor;
-import com.pankov.roadtosenior.ioccontainer.service.UserService;
+import com.pankov.roadtosenior.ioccontainer.processor.*;
+import com.pankov.roadtosenior.ioccontainer.service.*;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,7 @@ class ClassPathApplicationContextTest {
 
     private ClassPathApplicationContext context;
 
-    private List<BeanDefinition> expectedListBeanDefinitions = List.of(
+    private final List<BeanDefinition> expectedListBeanDefinitions = List.of(
             BeanDefinition.builder()
                     .id("mailService")
                     .className("com.pankov.roadtosenior.ioccontainer.service.MailService")
@@ -50,7 +49,7 @@ class ClassPathApplicationContextTest {
                     .refProperties(Map.of("mailService", "mailService"))
                     .build());
 
-    private List<Bean> expectedListBeans = List.of(
+    private final List<Bean> expectedListBeans = List.of(
             Bean.builder()
                     .id("mailService")
                     .value(new MailService())
@@ -245,4 +244,92 @@ class ClassPathApplicationContextTest {
 
     }
 
+    @Test
+    public void testPostConstruct_shouldChangeMaxAmountFieldInPaymentService() {
+        context.setBeans(expectedListBeans);
+        PaymentService paymentService = context.getBean(PaymentService.class, "paymentService");
+        assertEquals(0, paymentService.getMaxAmount());
+        context.postConstructProcess();
+        assertEquals(Integer.MAX_VALUE, paymentService.getMaxAmount());
+    }
+
+    /*@Test
+    public void testSeparateSystemBean_shouldMoveSystemBeansToMapAndRemoveItFromCommonBeanList() {
+        List<Bean> beans = new ArrayList<>() {{
+            add(Bean.builder().id("mailService").value(new MailService()).build());
+            add(Bean.builder().id("customBeanPostProcessor").value(new PaymentServiceBeanPostProcessor()).build());
+            add(Bean.builder().id("paymentService").value(new PaymentService()).build());
+            add(Bean.builder().id("emptyBeanPostProcessor").value(new EmptyBeanPostProcessor()).build());
+            add(Bean.builder().id("testBeanFactoryPostProcessor").value(new TestBeanFactoryPostProcessor()).build());
+            add(Bean.builder().id("userService").value(new UserService()).build());
+        }};
+        context.setBeans(beans);
+        Map<Class<?>, List<Bean>> systemBeans = context.separateSystemBean(beans);
+
+        assertEquals(3, context.getBeans().size());
+        assertEquals(2, systemBeans.get(BeanPostProcessor.class).size());
+        assertEquals(1, systemBeans.get(BeanFactoryPostProcessor.class).size());
+        assertEquals(PaymentServiceBeanPostProcessor.class, systemBeans.get(BeanPostProcessor.class).get(0).getValue().getClass());
+    }*/
+
+    @Test
+    public void testBeforeInitProcess() {
+        context.setBeans(List.of(Bean.builder().id("customBeanPostProcessor").value(new PaymentServiceBeanPostProcessor()).build(),
+                Bean.builder().id("paymentWithMaxService").value(new PaymentService()).build()));
+        context.setSystemBeans(Map.of(
+                BeanPostProcessor.class,
+                List.of(Bean.builder().id("customBeanPostProcessor").value(new PaymentServiceBeanPostProcessor()).build())));
+        context.beforeInitProcess();
+        PaymentService paymentService = context.getBean(PaymentService.class);
+        assertEquals(AnotherMailService.class, paymentService.getMailService().getClass());
+
+        context.afterInitProcess();
+        assertEquals(-1, paymentService.getMaxAmount());
+    }
+
+    @Test
+    public void testCreateSystemBeans() {
+        List<Bean> beans = new ArrayList<>() {{
+            add(Bean.builder().id("mailService").value(new MailService()).build());
+            add(Bean.builder().id("customBeanPostProcessor").value(new PaymentServiceBeanPostProcessor()).build());
+            add(Bean.builder().id("paymentService").value(new PaymentService()).build());
+            add(Bean.builder().id("emptyBeanPostProcessor").value(new EmptyBeanPostProcessor()).build());
+            add(Bean.builder().id("testBeanFactoryPostProcessor").value(new TestBeanFactoryPostProcessor()).build());
+            add(Bean.builder().id("userService").value(new UserService()).build());
+        }};
+
+        List<BeanDefinition> beanDefinitions = new ArrayList<>() {{
+            add(BeanDefinition.builder().id("mailService")
+                    .className("com.pankov.roadtosenior.ioccontainer.service.MailService")
+                    .valueProperties(Map.of("protocol", "POP3", "port", "3000"))
+                    .refProperties(null).build());
+            add(BeanDefinition.builder()
+                    .id("customBeanPostProcessor")
+                    .className("com.pankov.roadtosenior.ioccontainer.processor.PaymentServiceBeanPostProcessor")
+                    .valueProperties(null).refProperties(null).build());
+            add(BeanDefinition.builder()
+                    .id("emptyBeanPostProcessor")
+                    .className("com.pankov.roadtosenior.ioccontainer.processor.EmptyBeanPostProcessor")
+                    .valueProperties(null).refProperties(null).build());
+            add(BeanDefinition.builder()
+                    .id("testBeanFactoryPostProcessor")
+                    .className("com.pankov.roadtosenior.ioccontainer.processor.TestBeanFactoryPostProcessor")
+                    .valueProperties(null).refProperties(null).build());
+        }};
+
+        Map<Class<?>, List<Bean>> expectedSystemBeans = Map.of(BeanPostProcessor.class,
+                List.of(new Bean("customBeanPostProcessor", new PaymentServiceBeanPostProcessor()),
+                        new Bean("emptyBeanPostProcessor", new EmptyBeanPostProcessor())),
+                BeanFactoryPostProcessor.class,
+                List.of(new Bean("testBeanFactoryPostProcessor", new TestBeanFactoryPostProcessor())));
+        context.setBeans(beans);
+        Map<Class<?>, List<Bean>> systemBeans = context.createSystemBeans(beanDefinitions);
+
+        assertNotNull(systemBeans);
+        assertEquals(2, systemBeans.size());
+        assertEquals(expectedSystemBeans, systemBeans);
+
+        assertEquals(1, beanDefinitions.size());
+        assertEquals("mailService", beanDefinitions.get(0).getId());
+    }
 }

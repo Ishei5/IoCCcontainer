@@ -1,9 +1,8 @@
 package com.pankov.roadtosenior.ioccontainer;
 
-import com.pankov.roadtosenior.ioccontainer.service.MailService;
-import com.pankov.roadtosenior.ioccontainer.service.PaymentService;
-import com.pankov.roadtosenior.ioccontainer.service.UserService;
+import com.pankov.roadtosenior.ioccontainer.service.*;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClassPathApplicationContextITest {
@@ -24,10 +23,33 @@ public class ClassPathApplicationContextITest {
         assertEquals(mailService, mailService_);
 
         PaymentService paymentWithMaxService = context.getBean(PaymentService.class, "paymentWithMaxService");
-        assertEquals(5000, paymentWithMaxService.getMaxAmount());
+        assertEquals(Integer.MAX_VALUE, paymentWithMaxService.getMaxAmount());
         assertEquals(mailService, paymentWithMaxService.getMailService());
 
         PaymentService paymentService = context.getBean(PaymentService.class, "paymentService");
         assertEquals(paymentWithMaxService.getMailService(), paymentService.getMailService());
+    }
+
+    @Test
+    public void testApplicationContextWithSystemBeans() {
+        ClassPathApplicationContext context = new ClassPathApplicationContext("context_for_test_processors.xml");
+
+        // Check BeanFactoryPostProcessor
+        assertEquals("com.pankov.roadtosenior.ioccontainer.service.SubstitutedMailService",
+                context.getBeanDefinitions().stream()
+                        .filter(beanDefinition -> "mailService".equals(beanDefinition.getId()))
+                        .findAny().get().getClassName());
+
+        assertEquals(SubstitutedMailService.class, context.getBean("mailService").getClass());
+
+        //Check BeanPostProcessor
+        PaymentService paymentWithMaxService = PaymentService.class.cast(context.getBean("paymentWithMaxService"));
+        assertEquals(AnotherMailService.class, paymentWithMaxService.getMailService().getClass());
+        assertEquals(-1, paymentWithMaxService.getMaxAmount());
+
+        //Check @PostConstruct
+        PaymentService paymentService = PaymentService.class.cast(context.getBean("paymentService"));
+        assertEquals(Integer.MAX_VALUE, paymentService.getMaxAmount());
+        assertEquals("SMTP", paymentService.getMailService().getProtocol());
     }
 }

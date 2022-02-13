@@ -15,6 +15,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,7 +26,8 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
     public List<BeanDefinition> getBeanDefinitions() {
         return Arrays.stream(paths)
                 .map(path -> parseXMLToBeanDefinitionList(this.getClass().getClassLoader().getResourceAsStream(path)))
-                .flatMap(list -> list.stream()).toList();
+                .flatMap(list -> list.stream())
+                .collect(Collectors.toList());
     }
 
     List<BeanDefinition> parseXMLToBeanDefinitionList(InputStream inputStream) {
@@ -42,7 +44,6 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
                 if (xmlEvent.isStartElement()) {
                     StartElement startElement = xmlEvent.asStartElement();
                     if (startElement.getName().getLocalPart().equals("bean")) {
-                        beanDefinition = new BeanDefinition();
                         valuePropertiesMap = new HashMap<>();
                         refPropertiesMap = new HashMap<>();
                         Attribute idAttr = startElement.getAttributeByName(new QName("id"));
@@ -51,7 +52,7 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
                             throw new ParseException("ID is not declared");
                         }
 
-                        beanDefinition.setId(idAttr.getValue());
+                        beanDefinition = new BeanDefinition(idAttr.getValue());
 
                         Attribute classAttr = startElement.getAttributeByName(new QName("class"));
 
