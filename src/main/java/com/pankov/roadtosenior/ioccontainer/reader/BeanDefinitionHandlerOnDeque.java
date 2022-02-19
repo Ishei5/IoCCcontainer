@@ -13,10 +13,15 @@ public class BeanDefinitionHandlerOnDeque extends DefaultHandler {
     private final static String BEAN = "bean";
     private final static String PROPERTY = "property";
 
-    private final Stack<BeanDefinition> beanDefinitions = new Stack<>();
+    private Stack<BeanDefinition> beanDefinitions;
 
-    public List<BeanDefinition> getBeanDefinitions() {
+    public Stack<BeanDefinition> getBeanDefinitions() {
         return beanDefinitions;
+    }
+
+    @Override
+    public void startDocument() throws SAXException {
+        beanDefinitions = new Stack<>();
     }
 
     @Override
