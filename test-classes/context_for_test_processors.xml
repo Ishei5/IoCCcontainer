@@ -1,0 +1,27 @@
+<beans>
+    <bean id="mailService" class="com.pankov.roadtosenior.ioccontainer.service.MailService">
+        <property name="protocol" value="POP3"/>
+        <property name="port" value="3000"/>
+    </bean>
+
+    <bean id="customBeanPostProcessor" class="com.pankov.roadtosenior.ioccontainer.processor.CustomBeanFactoryPostProcessor"/>
+
+    <bean id="userService" class="com.pankov.roadtosenior.ioccontainer.service.UserService">
+        <property name="mailService" ref="mailService"/>
+    </bean>
+
+    <bean id="paymentWithMaxService" class="com.pankov.roadtosenior.ioccontainer.service.PaymentService">
+        <property name="maxAmount" value="5000"/>
+        <property name="mailService" ref="mailService"/>
+    </bean>
+
+    <bean id="emptyBeanPostProcessor" class="com.pankov.roadtosenior.ioccontainer.processor.EmptyBeanPostProcessor"/>
+
+    <bean id="paymentServiceBeanPostProcessor" class="com.pankov.roadtosenior.ioccontainer.processor.PaymentServiceBeanPostProcessor" />
+
+    <bean id="testBeanFactoryPostProcessor" class="com.pankov.roadtosenior.ioccontainer.processor.TestBeanFactoryPostProcessor"/>
+
+    <bean id="paymentService" class="com.pankov.roadtosenior.ioccontainer.service.PaymentService">
+        <property name="mailService" ref="mailService"/>
+    </bean>
+</beans>
