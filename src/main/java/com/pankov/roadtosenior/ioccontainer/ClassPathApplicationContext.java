@@ -95,18 +95,23 @@ public class ClassPathApplicationContext implements ApplicationContext {
                 .collect(Collectors.toList());
     }
 
+    void invoker(Method method, Object object) {
+        ThrowingConsumer<Method> consumer = mMethod -> mMethod.invoke(object);
+        consumer.accept(method);
+    }
+
+    void invoker(Method method, Object object, Object ... properties) {
+        ThrowingConsumer<Method> consumer = mMethod -> mMethod.invoke(object, properties);
+        consumer.accept(method);
+    }
+
     void postConstructProcess() {
         for (Bean bean : beans) {
             Object beanClass = bean.getValue();
             for (Method method : beanClass.getClass().getDeclaredMethods()) {
                 if (method.isAnnotationPresent(PostConstruct.class)) {
                     method.setAccessible(true);
-                    try {
-                        method.invoke(beanClass);
-                    } catch (ReflectiveOperationException exception) {
-                        throw new BeanInstantiationException(
-                                String.format("Error during call init method of %s", beanClass), exception);
-                    }
+                    invoker(method, beanClass);
                 }
             }
         }
@@ -232,13 +237,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         String setterName = createSetterName(fieldName);
         Class<?> setterValueType = getValueType(object, fieldName);
         Method setter = getSetterMethod(object, setterName, setterValueType);
-
-        try {
-            setter.invoke(object, parseProperty(property, setterValueType));
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new BeanInstantiationException(String.format("Error during set property - %s", property),
-                    exception);
-        }
+        invoker(setter, object, parseProperty(property, setterValueType));
     }
 
     void injectRefProperty(Object object, String fieldName, String property) {
@@ -250,14 +249,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         if (value == null) {
             throw new BeanException(String.format("There is no bean with id = %s", property));
         }
-
-        try {
-            setter.invoke(object, value);
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new BeanInstantiationException(String.format("Error during set property - %s", property),
-                    exception);
-        }
-
+        invoker(setter, object, value);
     }
 
     String createSetterName(String fieldName) {

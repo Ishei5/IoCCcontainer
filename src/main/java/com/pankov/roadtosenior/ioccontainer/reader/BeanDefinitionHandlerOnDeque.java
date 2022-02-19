@@ -6,28 +6,17 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class BeanDefinitionHandler extends DefaultHandler {
+public class BeanDefinitionHandlerOnDeque extends DefaultHandler {
 
     private final static String BEAN = "bean";
     private final static String PROPERTY = "property";
 
-    private List<BeanDefinition> beanDefinitions;
-    private BeanDefinition beanDefinition;
-    private Map<String, String> valueProperties;
-    private Map<String, String> refProperties;
+    private final Stack<BeanDefinition> beanDefinitions = new Stack<>();
 
     public List<BeanDefinition> getBeanDefinitions() {
         return beanDefinitions;
-    }
-
-    @Override
-    public void startDocument() {
-        beanDefinitions = new ArrayList<>();
     }
 
     @Override
@@ -42,16 +31,25 @@ public class BeanDefinitionHandler extends DefaultHandler {
             if (clazz == null) {
                 throw new ParseException("CLASS attribute is required");
             }
-
-            beanDefinition = new BeanDefinition(id, clazz);
-
-            valueProperties = new HashMap<>();
-            refProperties = new HashMap<>();
+            beanDefinitions.add(new BeanDefinition(id, clazz));
         } else if (qName.equals(PROPERTY)) {
+            BeanDefinition beanDefinition = beanDefinitions.peek();
+
             String name = attributes.getValue("name");
             if (name == null) {
                 throw new ParseException("There is no 'NAME' for property");
             }
+
+            Map<String, String> valueProperties = beanDefinition.getValueProperties();
+            if (valueProperties == null) {
+                valueProperties = new HashMap<>();
+            }
+            
+            Map<String, String> refProperties = beanDefinition.getRefProperties();
+            if (refProperties == null) {
+                refProperties = new HashMap<>();
+            }
+
             String value = attributes.getValue("value");
             String ref = attributes.getValue("ref");
 
@@ -63,20 +61,13 @@ public class BeanDefinitionHandler extends DefaultHandler {
                 refProperties.put(name, ref);
             }
 
-        }
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (qName.equals(BEAN)) {
-            if (valueProperties.size() != 0) {
+            if (!valueProperties.isEmpty()) {
                 beanDefinition.setValueProperties(valueProperties);
             }
-            if (refProperties.size() != 0) {
+
+            if (!refProperties.isEmpty()) {
                 beanDefinition.setRefProperties(refProperties);
             }
-
-            beanDefinitions.add(beanDefinition);
         }
     }
 }

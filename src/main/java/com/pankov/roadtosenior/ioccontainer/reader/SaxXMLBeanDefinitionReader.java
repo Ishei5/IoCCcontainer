@@ -19,7 +19,7 @@ import java.util.List;
 public class SaxXMLBeanDefinitionReader implements BeanDefinitionReader {
 
     private final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
-    private final BeanDefinitionHandler beanDefinitionHandler = new BeanDefinitionHandler();
+    private final BeanDefinitionHandlerOnDeque beanDefinitionHandler = new BeanDefinitionHandlerOnDeque();
     private String[] paths;
 
     @Override

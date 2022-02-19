@@ -52,14 +52,12 @@ public class XMLBeanDefinitionReader implements BeanDefinitionReader {
                             throw new ParseException("ID is not declared");
                         }
 
-                        beanDefinition = new BeanDefinition(idAttr.getValue());
-
                         Attribute classAttr = startElement.getAttributeByName(new QName("class"));
 
                         if (classAttr == null) {
                             throw new ParseException("Class is not declared");
                         }
-                        beanDefinition.setClassName(classAttr.getValue());
+                        beanDefinition = new BeanDefinition(idAttr.getValue(), classAttr.getValue());
                     } else if (startElement.getName().getLocalPart().equals("property")) {
                         Attribute nameAttr = startElement.getAttributeByName(new QName("name"));
                         Attribute valueAttr = startElement.getAttributeByName(new QName("value"));

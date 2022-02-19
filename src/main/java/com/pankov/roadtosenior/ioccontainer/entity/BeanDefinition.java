@@ -12,6 +12,7 @@ import java.util.Map;
 public class BeanDefinition {
     @NonNull
     private final String id;
+    @NonNull
     private String className;
     private Map<String, String> valueProperties;
     private Map<String, String> refProperties;
