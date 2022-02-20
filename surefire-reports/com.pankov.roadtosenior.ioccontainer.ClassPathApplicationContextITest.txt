@@ -1,8 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextITest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.096 sec <<< FAILURE! - in com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextITest
-testApplicationContextWithSystemBeans  Time elapsed: 0.012 sec  <<< ERROR!
-java.lang.UnsupportedOperationException
-	at com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextITest.testApplicationContextWithSystemBeans(ClassPathApplicationContextITest.java:35)
-
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.107 sec - in com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextITest

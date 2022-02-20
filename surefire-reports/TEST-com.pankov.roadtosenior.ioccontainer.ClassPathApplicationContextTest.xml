@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.038" tests="23" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.039" tests="23" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
     <property name="java.vm.version" value="17.0.1+12-39"/>
@@ -65,19 +65,19 @@
   <testcase name="testParseIntegerProperty" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0"/>
   <testcase name="testCreateSetter" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0"/>
   <testcase name="testPostConstruct_shouldChangeMaxAmountFieldInPaymentService" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0"/>
-  <testcase name="testInjectValueProperties" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
+  <testcase name="testInjectValueProperties" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
   <testcase name="testGetBeanNames" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
-  <testcase name="testCreateBeans_shouldCreateListOfBeans" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
-  <testcase name="testInjectRefProperty_shouldThrowBeanInstantiationException" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
-  <testcase name="testInjectRefProperties" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
-  <testcase name="testBeforeInitProcess" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.003"/>
-  <testcase name="testGetReferenceValueType" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0"/>
-  <testcase name="testParseDoubleProperty" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
-  <testcase name="testGetStringValueType" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
+  <testcase name="testCreateBeans_shouldCreateListOfBeans" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
+  <testcase name="testInjectRefProperty_shouldThrowBeanInstantiationException" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.003"/>
+  <testcase name="testInjectRefProperties" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
+  <testcase name="testBeforeInitProcess" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
+  <testcase name="testGetReferenceValueType" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
+  <testcase name="testParseDoubleProperty" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
+  <testcase name="testGetStringValueType" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
   <testcase name="testGetBeanByClass" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
   <testcase name="testGetBeanClass_shouldThrowNoUniqueException" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.002"/>
   <testcase name="testGetSetterMethodShouldThrowException" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.003"/>
-  <testcase name="testCreateSystemBeans" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.005"/>
+  <testcase name="testCreateSystemBeans" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.004"/>
   <testcase name="testGetBeanByNameAndClass" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
   <testcase name="testSetterMethod" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
   <testcase name="testInjectRefProperty" classname="com.pankov.roadtosenior.ioccontainer.ClassPathApplicationContextTest" time="0.001"/>
