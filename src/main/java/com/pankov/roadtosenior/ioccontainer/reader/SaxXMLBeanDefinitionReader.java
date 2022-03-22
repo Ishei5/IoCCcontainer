@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,7 +28,8 @@ public class SaxXMLBeanDefinitionReader implements BeanDefinitionReader {
     public List<BeanDefinition> getBeanDefinitions() {
         return Arrays.stream(paths)
                 .map(path -> parseXMLToBeanDefinitionList(this.getClass().getClassLoader().getResourceAsStream(path)))
-                .flatMap(Collection::stream).toList();
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     List<BeanDefinition> parseXMLToBeanDefinitionList(InputStream inputStream) {

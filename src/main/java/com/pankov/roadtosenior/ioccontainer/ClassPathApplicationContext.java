@@ -10,7 +10,7 @@ import com.pankov.roadtosenior.ioccontainer.processor.BeanPostProcessor;
 import com.pankov.roadtosenior.ioccontainer.processor.PostConstruct;
 import com.pankov.roadtosenior.ioccontainer.processor.SystemBean;
 import com.pankov.roadtosenior.ioccontainer.reader.BeanDefinitionReader;
-import com.pankov.roadtosenior.ioccontainer.reader.XMLBeanDefinitionReader;
+import com.pankov.roadtosenior.ioccontainer.reader.SaxXMLBeanDefinitionReader;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.InvocationTargetException;
@@ -30,7 +30,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
             List.of(Integer.class, Double.class, Long.class, Boolean.class, Float.class, Short.class, Byte.class, Character.class);
 
     public ClassPathApplicationContext(String... paths) {
-        BeanDefinitionReader reader = new XMLBeanDefinitionReader(paths);
+        BeanDefinitionReader reader = new SaxXMLBeanDefinitionReader(paths);
         beanDefinitions = reader.getBeanDefinitions();
 
         systemBeans = createSystemBeans(beanDefinitions);
@@ -59,7 +59,8 @@ public class ClassPathApplicationContext implements ApplicationContext {
     public <T> T getBean(Class<T> clazz) {
         List<Object> beanList = beans.stream()
                 .map(Bean::getValue)
-                .filter(value -> clazz.equals(value.getClass())).toList();
+                .filter(value -> clazz.equals(value.getClass()))
+                .collect(Collectors.toList());
 
         if (beanList.size() > 1) {
             throw new NoUniqueBeanException("Bean with {} class not unique");
@@ -100,7 +101,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
         consumer.accept(method);
     }
 
-    void invoker(Method method, Object object, Object ... properties) {
+    void invoker(Method method, Object object, Object... properties) {
         ThrowingConsumer<Method> consumer = mMethod -> mMethod.invoke(object, properties);
         consumer.accept(method);
     }
@@ -186,7 +187,9 @@ public class ClassPathApplicationContext implements ApplicationContext {
     void beforeInitProcess() {
         for (Bean systemBean : systemBeans.get(BEAN_POST_PROCESSOR)) {
             for (Bean bean : beans) {
-                ((BeanPostProcessor) systemBean.getValue()).postProcessBeforeInitialization(bean.getValue(), bean.getId());
+                Object object = ((BeanPostProcessor) systemBean.getValue()).postProcessBeforeInitialization(
+                        bean.getValue(), bean.getId());
+                bean.setValue(object);
             }
         }
     }
@@ -194,7 +197,9 @@ public class ClassPathApplicationContext implements ApplicationContext {
     void afterInitProcess() {
         for (Bean systemBean : systemBeans.get(BEAN_POST_PROCESSOR)) {
             for (Bean bean : beans) {
-                ((BeanPostProcessor) systemBean.getValue()).postProcessAfterInitialization(bean.getValue(), bean.getId());
+                Object object = ((BeanPostProcessor) systemBean.getValue()).postProcessAfterInitialization(
+                        bean.getValue(), bean.getId());
+                bean.setValue(object);
             }
         }
     }
